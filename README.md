@@ -1,1 +1,1 @@
-# didactic-octo-rotary-phone
+# simple-sns
