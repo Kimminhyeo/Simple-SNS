@@ -4,9 +4,9 @@ import com.min.simplesns.model.entity.UserEntity;
 
 public class UserEntityFixture {
     // 가짜 테스트용 유저 엔티티 반환
-    public static UserEntity get(String userName, String password){
+    public static UserEntity get(String userName, String password, Integer userId){
         UserEntity result = new UserEntity();
-        result.setId(1);
+        result.setId(userId);
         result.setUserName(userName);
         result.setPassword(password);
 
