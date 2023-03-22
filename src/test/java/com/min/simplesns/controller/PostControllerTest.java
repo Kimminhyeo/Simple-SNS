@@ -6,6 +6,8 @@ import com.min.simplesns.controller.request.PostModifyRequest;
 import com.min.simplesns.controller.request.UserJoinRequest;
 import com.min.simplesns.exception.ErrorCode;
 import com.min.simplesns.exception.SnsApplicationException;
+import com.min.simplesns.fixture.PostEntityFixture;
+import com.min.simplesns.model.Post;
 import com.min.simplesns.service.PostService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,6 +75,10 @@ public class PostControllerTest {
 
         String title = "title";
         String body = "boyd";
+
+        // mocking
+        when(postService.modify(eq(title), eq(body), any(), any()))
+                .thenReturn(Post.fromEntity(PostEntityFixture.get("userName", 1, 1)));
 
         mockMvc.perform(put("/api/v1/posts/1")
                         .contentType(MediaType.APPLICATION_JSON)

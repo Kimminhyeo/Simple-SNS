@@ -1,14 +1,14 @@
 package com.min.simplesns.controller;
 
 import com.min.simplesns.controller.request.PostCreateRequest;
+import com.min.simplesns.controller.request.PostModifyRequest;
+import com.min.simplesns.controller.response.PostResponse;
 import com.min.simplesns.controller.response.Response;
+import com.min.simplesns.model.Post;
 import com.min.simplesns.service.PostService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/posts")
@@ -22,5 +22,12 @@ public class PostController {
         postService.create(request.getTitle(), request.getBody(), authentication.getName());
 
         return Response.success();
+    }
+
+    @PutMapping("/{postId}")
+    public Response<PostResponse> modify(@PathVariable Integer postId, @RequestBody PostModifyRequest request, Authentication authentication){
+        Post post = postService.modify(request.getTitle(), request.getBody(), authentication.getName(), postId);
+
+        return Response.success(PostResponse.fromPost(post));
     }
 }
