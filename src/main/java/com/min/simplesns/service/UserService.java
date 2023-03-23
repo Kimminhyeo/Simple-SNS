@@ -6,6 +6,7 @@ import com.min.simplesns.model.Alarm;
 import com.min.simplesns.model.User;
 import com.min.simplesns.model.entity.UserEntity;
 import com.min.simplesns.repository.AlarmEntityRepository;
+import com.min.simplesns.repository.UserCacheRepository;
 import com.min.simplesns.repository.UserEntityRepository;
 import com.min.simplesns.util.JwtTokenUtils;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,8 @@ public class UserService {
 
     private final AlarmEntityRepository alarmEntityRepository;
 
+    private final UserCacheRepository userCacheRepository;
+
     @Value("${jwt.secret-key}")
     private String secretKey;
 
@@ -36,7 +39,10 @@ public class UserService {
     private Long expiredTimeMs;
 
     public User loadUserByUserName(String userName){
-        return userEntityRepository.findByUserName(userName).map(User::fromEntity).orElseThrow(() -> new SnsApplicationException(ErrorCode.USER_NOT_FOUND, String.format("%s not found", userName)));
+        return userCacheRepository.getUser(userName).orElseGet(() ->
+            userEntityRepository.findByUserName(userName).map(User::fromEntity).orElseThrow(() ->
+                    new SnsApplicationException(ErrorCode.USER_NOT_FOUND, String.format("%s not found", userName)))
+        );
     }
 
     @Transactional
@@ -54,10 +60,12 @@ public class UserService {
 
     public String login(String userName, String password){
         // 회원가입 여부 체크
-        UserEntity userEntity = userEntityRepository.findByUserName(userName).orElseThrow(() -> new SnsApplicationException(ErrorCode.USER_NOT_FOUND, String.format("%s not founded", userName)));
+        User user = loadUserByUserName(userName);
+
+        userCacheRepository.setUser(user);
 
         // 비밀번호 체크
-        if(!encoder.matches(password, userEntity.getPassword())){
+        if(!encoder.matches(password, user.getPassword())){
             throw new SnsApplicationException(ErrorCode.INVALID_PASSWORD);
         }
 
