@@ -2,8 +2,10 @@ package com.min.simplesns.service;
 
 import com.min.simplesns.exception.ErrorCode;
 import com.min.simplesns.exception.SnsApplicationException;
+import com.min.simplesns.model.Alarm;
 import com.min.simplesns.model.User;
 import com.min.simplesns.model.entity.UserEntity;
+import com.min.simplesns.repository.AlarmEntityRepository;
 import com.min.simplesns.repository.UserEntityRepository;
 import com.min.simplesns.util.JwtTokenUtils;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,8 @@ public class UserService {
     private final UserEntityRepository userEntityRepository;
 
     private final BCryptPasswordEncoder encoder;
+
+    private final AlarmEntityRepository alarmEntityRepository;
 
     @Value("${jwt.secret-key}")
     private String secretKey;
@@ -62,11 +66,9 @@ public class UserService {
 
         return token;
     }
+    public Page<Alarm> alarmList(String userName, Pageable pageable){
+        UserEntity userEntity = userEntityRepository.findByUserName(userName).orElseThrow(() -> new SnsApplicationException(ErrorCode.USER_NOT_FOUND, String.format("%s not founded", userName)));
 
-    // TODO : alarm return
-    public Page<Void> alarmList(String userName, Pageable pageable){
-
-
-        return Page.empty();
+        return alarmEntityRepository.findAllByUser(userEntity, pageable).map(Alarm::fromEntity);
     }
 }

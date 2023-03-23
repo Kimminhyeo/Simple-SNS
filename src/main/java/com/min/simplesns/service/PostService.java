@@ -2,16 +2,12 @@ package com.min.simplesns.service;
 
 import com.min.simplesns.exception.ErrorCode;
 import com.min.simplesns.exception.SnsApplicationException;
+import com.min.simplesns.model.AlarmArgs;
+import com.min.simplesns.model.AlarmType;
 import com.min.simplesns.model.Comment;
 import com.min.simplesns.model.Post;
-import com.min.simplesns.model.entity.CommentEntity;
-import com.min.simplesns.model.entity.LikeEntity;
-import com.min.simplesns.model.entity.PostEntity;
-import com.min.simplesns.model.entity.UserEntity;
-import com.min.simplesns.repository.CommentEntityRepository;
-import com.min.simplesns.repository.LikeEntityRepository;
-import com.min.simplesns.repository.PostEntityRepository;
-import com.min.simplesns.repository.UserEntityRepository;
+import com.min.simplesns.model.entity.*;
+import com.min.simplesns.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,6 +27,8 @@ public class PostService {
     private final LikeEntityRepository likeEntityRepository;
 
     private final CommentEntityRepository commentEntityRepository;
+
+    private final AlarmEntityRepository alarmEntityRepository;
 
     @Transactional
     public void create(String title, String body, String userName){
@@ -96,6 +94,9 @@ public class PostService {
 
         // like save
         likeEntityRepository.save(LikeEntity.of(userEntity, postEntity));
+
+        alarmEntityRepository.save(AlarmEntity.of(postEntity.getUser(), AlarmType.NEW_LIKE_ON_POST, new AlarmArgs(userEntity.getId(), postEntity.getId())));
+
     }
 
     public int likeCount(Integer postId){
@@ -111,6 +112,8 @@ public class PostService {
 
         // comment save
         commentEntityRepository.save(CommentEntity.of(userEntity, postEntity, comment));
+
+        alarmEntityRepository.save(AlarmEntity.of(postEntity.getUser(), AlarmType.NEW_COMMENT_ON_POST, new AlarmArgs(userEntity.getId(), postEntity.getId())));
     }
 
     public Page<Comment> getComments(Integer postId, Pageable pageable){
