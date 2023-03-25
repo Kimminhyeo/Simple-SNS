@@ -1,6 +1,7 @@
 package com.min.simplesns.model.entity;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
@@ -10,16 +11,17 @@ import java.sql.Timestamp;
 import java.time.Instant;
 
 @Entity
-@Table(name = "\"like\"")
+@Table(name = "ilike")
 @Getter
 @Setter
-@SQLDelete(sql = "UPDATE \"like\" SET deleted_at = NOW() where id=?")
+@SQLDelete(sql = "UPDATE ilike SET deleted_at = NOW() where id=?")
 @Where(clause = "deleted_at is NULL")
+@NoArgsConstructor
 public class LikeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Integer id = null;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
@@ -43,7 +45,7 @@ public class LikeEntity {
         this.registeredAt = Timestamp.from(Instant.now());
     }
 
-    @PrePersist
+    @PreUpdate
     void updatedAt(){
         this.updatedAt = Timestamp.from(Instant.now());
     }

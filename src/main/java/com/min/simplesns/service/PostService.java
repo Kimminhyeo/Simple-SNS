@@ -49,7 +49,7 @@ public class PostService {
 
         // post permission
         if(postEntity.getUser() != userEntity){
-            throw new SnsApplicationException(ErrorCode.INVALID_PERMISSION, String.format("%s has no permission with $s", userName, postId));
+            throw new SnsApplicationException(ErrorCode.INVALID_PERMISSION, String.format("%s has no permission with post %d", userName, postId));
         }
 
         postEntity.setTitle(title);
@@ -67,7 +67,7 @@ public class PostService {
 
         // post permission
         if(postEntity.getUser() != userEntity){
-            throw new SnsApplicationException(ErrorCode.INVALID_PERMISSION, String.format("%s has no permission with $s", userName, postId));
+            throw new SnsApplicationException(ErrorCode.INVALID_PERMISSION, String.format("%s has no permission with post %d", userName, postId));
         }
         likeEntityRepository.deleteAllByPost(postEntity);
         commentEntityRepository.deleteAllByPost(postEntity);
@@ -96,13 +96,15 @@ public class PostService {
 
         // like save
         likeEntityRepository.save(LikeEntity.of(userEntity, postEntity));
-        alarmProducer.send(new AlarmEvent(postEntity.getUser().getId(), AlarmType.NEW_LIKE_ON_POST, new AlarmArgs(userEntity.getId(), postEntity.getId())));
+        alarmProducer.send(new AlarmEvent(postEntity.getUser().getId(), AlarmType.NEW_LIKE_ON_POST, new AlarmArgs(userEntity.getId(), postId)));
     }
 
-    public long likeCount(Integer postId){
+    public Integer likeCount(Integer postId){
         PostEntity postEntity = getPostEntityOrException(postId);
+        List<LikeEntity> likes = likeEntityRepository.findAllByPost(postEntity);
         // count like
-        return likeEntityRepository.countByPost(postEntity);
+        //return likeEntityRepository.countByPost(postEntity);
+        return likes.size();
     }
 
     @Transactional
@@ -123,12 +125,12 @@ public class PostService {
     // post exist
     private PostEntity getPostEntityOrException(Integer postId){
         return postEntityRepository.findById(postId).orElseThrow(() ->
-                new SnsApplicationException(ErrorCode.POST_NOT_FOUND, String.format("%s not founded", postId)));
+                new SnsApplicationException(ErrorCode.POST_NOT_FOUND, String.format("postId is %d", postId)));
     }
 
     // user exist
     private UserEntity getUserEntityOrException(String userName){
         return userEntityRepository.findByUserName(userName).orElseThrow(() ->
-                new SnsApplicationException(ErrorCode.USER_NOT_FOUND, String.format("%s not founded", userName)));
+                new SnsApplicationException(ErrorCode.USER_NOT_FOUND, String.format("userName is %s", userName)));
     }
 }

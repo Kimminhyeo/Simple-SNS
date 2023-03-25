@@ -27,7 +27,6 @@ public class UserController {
     private final UserService userService;
     private final AlarmService alarmService;
 
-    // TODO : implement
     @PostMapping("/join")
     public Response<UserJoinResponse> join(@RequestBody UserJoinRequest request){
 

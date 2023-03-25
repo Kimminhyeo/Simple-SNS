@@ -3,6 +3,7 @@ package com.min.simplesns.configuration;
 import com.min.simplesns.model.User;
 import io.lettuce.core.RedisURI;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,19 +21,26 @@ public class RedisConfiguration {
 
     private final RedisProperties redisProperties;
 
+    @Value("${spring.redis.host}")
+    private String host;
+
+    @Value("${spring.redis.port}")
+    private int port;
+
     @Bean
     public RedisConnectionFactory redisConnectionFactory(){
-        RedisURI redisURI = RedisURI.create(redisProperties.getUrl());
-        org.springframework.data.redis.connection.RedisConfiguration configuration = LettuceConnectionFactory.createRedisConfiguration(redisURI);
-        LettuceConnectionFactory factory = new LettuceConnectionFactory(configuration);
-        factory.afterPropertiesSet();
-        return factory;
+//        RedisURI redisURI = RedisURI.create(redisProperties.getUrl());
+//        org.springframework.data.redis.connection.RedisConfiguration configuration = LettuceConnectionFactory.createRedisConfiguration(redisURI);
+//        LettuceConnectionFactory factory = new LettuceConnectionFactory(configuration);
+//        factory.afterPropertiesSet();
+//        return factory;
+        return new LettuceConnectionFactory(host, port);
     }
 
     @Bean
-    public RedisTemplate<String, User> userRedisTemplate(RedisConnectionFactory redisConnectionFactory){
+    public RedisTemplate<String, User> userRedisTemplate(){
         RedisTemplate<String, User> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setConnectionFactory(redisConnectionFactory);
+        redisTemplate.setConnectionFactory(redisConnectionFactory());
         redisTemplate.setKeySerializer(new StringRedisSerializer());
         redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<User>(User.class));
 

@@ -7,7 +7,9 @@ import com.min.simplesns.controller.response.CommentResponse;
 import com.min.simplesns.controller.response.PostResponse;
 import com.min.simplesns.controller.response.Response;
 import com.min.simplesns.model.Post;
+import com.min.simplesns.model.User;
 import com.min.simplesns.service.PostService;
+import com.min.simplesns.util.ClassUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -60,7 +62,7 @@ public class PostController {
     }
 
     @GetMapping("/{postId}/likes")
-    public Response<Long> likeCount(@PathVariable Integer postId, Authentication authentication){
+    public Response<Integer> likeCount(@PathVariable Integer postId, Authentication authentication){
 
         return Response.success(postService.likeCount(postId));
     }

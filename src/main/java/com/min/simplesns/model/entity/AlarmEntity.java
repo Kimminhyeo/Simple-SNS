@@ -4,6 +4,7 @@ import com.min.simplesns.model.AlarmArgs;
 import com.min.simplesns.model.AlarmType;
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Type;
@@ -15,19 +16,20 @@ import java.sql.Timestamp;
 import java.time.Instant;
 
 @Entity
-@Table(name = "\"alarm\"", indexes = {
+@Table(name = "alarm", indexes = {
         @Index(name = "user_id_idx", columnList = "user_id")
 })
 @Getter
 @Setter
 @TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)
-@SQLDelete(sql = "UPDATE \"alarm\" SET deleted_at = NOW() where id=?")
+@SQLDelete(sql = "UPDATE alarm SET deleted_at = NOW() where id=?")
 @Where(clause = "deleted_at is NULL")
+@NoArgsConstructor
 public class AlarmEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Integer id = null;
 
     // 알람을 받은 사람
     @ManyToOne(fetch = FetchType.LAZY)
@@ -59,7 +61,7 @@ public class AlarmEntity {
         this.registeredAt = Timestamp.from(Instant.now());
     }
 
-    @PrePersist
+    @PreUpdate
     void updatedAt(){
         this.updatedAt = Timestamp.from(Instant.now());
     }
