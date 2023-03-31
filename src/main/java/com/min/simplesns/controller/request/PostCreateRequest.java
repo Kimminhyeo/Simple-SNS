@@ -1,9 +1,9 @@
 package com.min.simplesns.controller.request;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 
-@Getter
+@Data
 @AllArgsConstructor
 public class PostCreateRequest {
 

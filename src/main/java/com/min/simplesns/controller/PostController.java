@@ -32,15 +32,16 @@ public class PostController {
 
     @PutMapping("/{postId}")
     public Response<PostResponse> modify(@PathVariable Integer postId, @RequestBody PostModifyRequest request, Authentication authentication){
-        Post post = postService.modify(request.getTitle(), request.getBody(), authentication.getName(), postId);
-
-        return Response.success(PostResponse.fromPost(post));
+        User user = ClassUtils.getSafeCastInstance(authentication.getPrincipal(), User.class).get();
+        return Response.success(
+                PostResponse.fromPost(
+                        postService.modify(request.getTitle(), request.getBody(), user.getId(), postId)));
     }
 
     @DeleteMapping("/{postId}")
     public Response<Void> delete(@PathVariable Integer postId, Authentication authentication){
-        postService.delete(authentication.getName(), postId);
-
+        User user = ClassUtils.getSafeCastInstance(authentication.getPrincipal(), User.class).get();
+        postService.delete(user.getId(), postId);
         return Response.success();
     }
 

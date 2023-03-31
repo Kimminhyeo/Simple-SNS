@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,7 +39,7 @@ public class UserService {
     @Value("${jwt.token.expired-time-ms}")
     private Long expiredTimeMs;
 
-    public User loadUserByUserName(String userName){
+    public User loadUserByUserName(String userName) throws UsernameNotFoundException {
         return userCacheRepository.getUser(userName).orElseGet(() ->
             userEntityRepository.findByUserName(userName).map(User::fromEntity).orElseThrow(() ->
                     new SnsApplicationException(ErrorCode.USER_NOT_FOUND, String.format("%s not found", userName)))
