@@ -29,92 +29,112 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class UserControllerTest {
+public class UserControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
+    @MockBean
+    UserService userService;
+
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
-    private UserService userService;
-
     @Test
+    @WithAnonymousUser
     public void 회원가입() throws Exception {
-        String userName = "userName";
+        String userName = "name";
         String password = "password";
 
         when(userService.join(userName, password)).thenReturn(mock(User.class));
 
         mockMvc.perform(post("/api/v1/users/join")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsBytes(new UserJoinRequest(userName, password)))
-        ).andDo(print())
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    public void 회원가입시_이미_회원가입된_userName으로_회원가입을_하는경우_에러반환() throws Exception {
-        String userName = "userName";
-        String password = "password";
-
-        when(userService.join(userName, password)).thenThrow(new SnsApplicationException(ErrorCode.DUPLICATED_USER_NAME));
-
-        mockMvc.perform(post("/api/v1/users/join")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsBytes(new UserJoinRequest(userName, password)))
-                ).andDo(print())
-                .andExpect(status().isConflict());
-    }
-
-    @Test
-    public void 로그인시_회원가입이_안된_userName을_입력할경우_에러반환() throws Exception {
-        String userName = "userName";
-        String password = "password";
-
-        when(userService.login(userName, password)).thenThrow(new SnsApplicationException(ErrorCode.USER_NOT_FOUND));
-
-        mockMvc.perform(post("/api/v1/users/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsBytes(new UserLoginRequest(userName, password)))
-                ).andDo(print())
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    public void 로그인시_틀린_password를_입력할경우_에러반환() throws Exception {
-        String userName = "userName";
-        String password = "password";
-
-        when(userService.login(userName, password)).thenThrow(new SnsApplicationException(ErrorCode.INVALID_PASSWORD));
-
-        mockMvc.perform(post("/api/v1/users/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsBytes(new UserLoginRequest(userName, password)))
-                ).andDo(print())
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @WithMockUser
-    void 알람기능() throws Exception{
-        when(userService.alarmList(any(), any())).thenReturn(Page.empty());
-
-        mockMvc.perform(get("/api/v1/users/alarm")
-                .contentType(MediaType.APPLICATION_JSON))
+                        .content(objectMapper.writeValueAsBytes(new UserJoinRequest("name", "password"))))
                 .andDo(print())
                 .andExpect(status().isOk());
     }
 
     @Test
     @WithAnonymousUser
-    void 알람기능요청시_로그인하지_않은경우() throws Exception{
-        when(userService.alarmList(any(), any())).thenReturn(Page.empty());
+    public void 회원가입시_같은_아이디로_회원가입하면_에러발생() throws Exception {
+        String userName = "name";
+        String password = "password";
+        when(userService.join(userName, password)).thenThrow(new SnsApplicationException(ErrorCode.DUPLICATED_USER_NAME));
 
-        mockMvc.perform(get("/api/v1/users/alarm")
-                        .contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(post("/api/v1/users/join")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(new UserJoinRequest("name", "password"))))
                 .andDo(print())
+                .andExpect(status().is(ErrorCode.DUPLICATED_USER_NAME.getStatus().value()));
+    }
+
+    @Test
+    @WithAnonymousUser
+    public void 로그인() throws Exception {
+        String userName = "name";
+        String password = "password";
+
+        when(userService.login(userName, password)).thenReturn("testToken");
+
+        mockMvc.perform(post("/api/v1/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(new UserLoginRequest("name", "password"))))
+                .andDo(print())
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithAnonymousUser
+    public void 로그인시_회원가입한적이_없다면_에러발생() throws Exception {
+        String userName = "name";
+        String password = "password";
+
+        when(userService.login(userName, password)).thenThrow(new SnsApplicationException(ErrorCode.USER_NOT_FOUND));
+
+        mockMvc.perform(post("/api/v1/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(new UserLoginRequest("name", "password"))))
+                .andDo(print())
+                .andExpect(status().is(ErrorCode.USER_NOT_FOUND.getStatus().value()));
+    }
+
+    @Test
+    @WithAnonymousUser
+    public void 로그인시_비밀번호가_다르면_에러발생() throws Exception {
+        String userName = "name";
+        String password = "password";
+
+        when(userService.login(userName, password)).thenThrow(new SnsApplicationException(ErrorCode.INVALID_PASSWORD));
+
+        mockMvc.perform(post("/api/v1/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(new UserLoginRequest("name", "password"))))
+                .andDo(print())
+                .andExpect(status().is(ErrorCode.INVALID_PASSWORD.getStatus().value()));
+    }
+
+    /**
+     * 알람
+     */
+    @Test
+    @WithMockUser
+    void 알람기능() throws Exception {
+        when(userService.alarmList(any(), any())).thenReturn(Page.empty());
+        mockMvc.perform(get("/api/v1/users/alarm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                ).andDo(print())
+                .andExpect(status().isOk());
+    }
+
+
+    @Test
+    @WithAnonymousUser
+    void 알람기능시_로그인하지_않은경우() throws Exception {
+        when(userService.alarmList(any(), any())).thenReturn(Page.empty());
+        mockMvc.perform(get("/api/v1/users/alarm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                ).andDo(print())
                 .andExpect(status().isUnauthorized());
     }
 

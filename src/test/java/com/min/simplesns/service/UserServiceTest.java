@@ -3,6 +3,7 @@ package com.min.simplesns.service;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.min.simplesns.exception.ErrorCode;
 import com.min.simplesns.exception.SnsApplicationException;
+import com.min.simplesns.fixture.PostEntityFixture;
 import com.min.simplesns.fixture.UserEntityFixture;
 import com.min.simplesns.model.User;
 import com.min.simplesns.model.entity.UserEntity;
@@ -24,84 +25,72 @@ import static org.mockito.Mockito.when;
 public class UserServiceTest {
 
     @Autowired
-    private UserService userService;
+    UserService userService;
 
     @MockBean
-    private UserEntityRepository userEntityRepository;
+    UserEntityRepository userEntityRepository;
 
     @MockBean
-    private BCryptPasswordEncoder encoder;
+    BCryptPasswordEncoder bCryptPasswordEncoder;
 
     @Test
-    void 회원가입이_정상적으로_동작하는_경우(){
-        String userName = "userName";
-        String password = "password";
+    void 로그인이_정상동작한다() {
+        PostEntityFixture.TestInfo fixture = PostEntityFixture.get();
 
-        UserEntity fixture = UserEntityFixture.get(userName, password, 1);
+        when(userEntityRepository.findByUserName(fixture.getUserName())).thenReturn(Optional.empty());
 
-        // mocking
-        when(userEntityRepository.findByUserName(userName)).thenReturn(Optional.empty());
-        when(encoder.encode(password)).thenReturn("encrypt_password");
-        when(userEntityRepository.save(any())).thenReturn(fixture);
+        Assertions.assertDoesNotThrow(() -> userService.login(fixture.getUserName(), fixture.getPassword()));
 
-        Assertions.assertDoesNotThrow(() -> userService.join(userName, password));
     }
 
     @Test
-    void 회원가입시_userName으로_회원가입한_유저가_이미_있는경우(){
-        String userName = "userName";
-        String password = "password";
+    void 로그인시_유저가_존재하지_않으면_에러를_내뱉는다() {
+        PostEntityFixture.TestInfo fixture = PostEntityFixture.get();
 
-        UserEntity fixture = UserEntityFixture.get(userName, password, 1);
+        when(userEntityRepository.findByUserName(fixture.getUserName())).thenReturn(Optional.empty());
+        SnsApplicationException exception = Assertions.assertThrows(SnsApplicationException.class
+                , () -> userService.login(fixture.getUserName(), fixture.getPassword()));
 
-        // mocking
-        when(userEntityRepository.findByUserName(userName)).thenReturn(Optional.of(fixture));
-        when(encoder.encode(password)).thenReturn("encrypt_password");
-        when(userEntityRepository.save(any())).thenReturn(Optional.of(fixture));
+        Assertions.assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
+    }
 
-        SnsApplicationException e = Assertions.assertThrows(SnsApplicationException.class, () -> userService.join(userName, password));
-        Assertions.assertEquals(ErrorCode.DUPLICATED_USER_NAME, e.getErrorCode());
+
+    @Test
+    void 로그인시_패스워드가_다르면_에러를_내뱉는다() {
+        PostEntityFixture.TestInfo fixture = PostEntityFixture.get();
+
+        when(userEntityRepository.findByUserName(fixture.getUserName())).thenReturn(Optional.of(UserEntityFixture.get(fixture.getUserName(), "password1")));
+        when(bCryptPasswordEncoder.matches(fixture.getPassword(), "password1")).thenReturn(false);
+
+        SnsApplicationException exception = Assertions.assertThrows(SnsApplicationException.class
+                , () -> userService.login(fixture.getUserName(), fixture.getPassword()));
+
+        Assertions.assertEquals(ErrorCode.INVALID_PASSWORD, exception.getErrorCode());
     }
 
     @Test
-    void 로그인이_정상적으로_동작하는_경우(){
-        String userName = "userName";
-        String password = "password";
+    void 회원가입이_정상동작한다() {
+        PostEntityFixture.TestInfo fixture = PostEntityFixture.get();
 
-        UserEntity fixture = UserEntityFixture.get(userName, password, 1);
+        when(userEntityRepository.findByUserName(fixture.getUserName())).thenReturn(Optional.of(UserEntityFixture.get(fixture.getUserName(), fixture.getPassword())));
+        when(bCryptPasswordEncoder.encode(fixture.getPassword())).thenReturn("password_encrypt");
+        when(userEntityRepository.save(any())).thenReturn(Optional.of(UserEntityFixture.get(fixture.getUserName(), "password_encrypt")));
 
-        // mocking
-        when(userEntityRepository.findByUserName(userName)).thenReturn(Optional.of(fixture));
-        when(encoder.matches(password, fixture.getPassword())).thenReturn(true);
-
-        Assertions.assertDoesNotThrow(() -> userService.login(userName, password));
+        Assertions.assertDoesNotThrow(() -> userService.join(fixture.getUserName(), fixture.getPassword()));
     }
 
-    @Test
-    void 회원가입시_userName으로_회원가입한_유저가_없는_경우(){
-        String userName = "userName";
-        String password = "password";
-
-        // mocking
-        when(userEntityRepository.findByUserName(userName)).thenReturn(Optional.empty());
-
-        SnsApplicationException e = Assertions.assertThrows(SnsApplicationException.class, () -> userService.login(userName, password));
-        Assertions.assertEquals(ErrorCode.USER_NOT_FOUND, e.getErrorCode());
-    }
 
     @Test
-    void 로그인시_패스워드가_틀린_경우(){
-        String userName = "userName";
-        String password = "password";
-        String wrongPassword = "wrongPassword";
+    void 회원가입시_아이디가_중복되면_다르면_에러를_내뱉는다() {
+        PostEntityFixture.TestInfo fixture = PostEntityFixture.get();
 
-        UserEntity fixture = UserEntityFixture.get(userName, password, 1);
+        when(userEntityRepository.findByUserName(fixture.getUserName()))
+                .thenReturn(Optional.of(UserEntityFixture.get(fixture.getUserName(), fixture.getPassword())));
 
-        // mocking
-        when(userEntityRepository.findByUserName(userName)).thenReturn(Optional.of(fixture));
+        SnsApplicationException exception = Assertions.assertThrows(SnsApplicationException.class,
+                () -> userService.join(fixture.getUserName(), fixture.getPassword()));
 
-        SnsApplicationException e = Assertions.assertThrows(SnsApplicationException.class, () -> userService.login(userName, wrongPassword));
-        Assertions.assertEquals(ErrorCode.INVALID_PASSWORD, e.getErrorCode());
+        Assertions.assertEquals(ErrorCode.DUPLICATED_USER_NAME, exception.getErrorCode());
     }
 
 }

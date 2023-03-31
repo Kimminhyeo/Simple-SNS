@@ -27,159 +27,122 @@ import static org.mockito.Mockito.when;
 public class PostServiceTest {
 
     @Autowired
-    private PostService postService;
+    PostService postService;
 
     @MockBean
-    private PostEntityRepository postEntityRepository;
+    UserEntityRepository userEntityRepository;
 
     @MockBean
-    private UserEntityRepository userEntityRepository;
+    PostEntityRepository postEntityRepository;
 
     @Test
-    void 포스트작성이_성공한경우(){
-        String title = "title";
-        String body = "body";
-        String userName = "userName";
+    void 포스트_생성시_정상동작한다() {
+        PostEntityFixture.TestInfo fixture = PostEntityFixture.get();
+        when(userEntityRepository.findByUserName(fixture.getUserName())).thenReturn(Optional.of(UserEntityFixture.get(fixture.getUserName(), fixture.getPassword())));
+        when(postEntityRepository.save(any())).thenReturn(mock(PostEntity.class));
+        Assertions.assertDoesNotThrow(() -> postService.create(fixture.getUserName(), fixture.getTitle(), fixture.getBody()));
+    }
 
-        // mocking
-        when(userEntityRepository.findByUserName(userName)).thenReturn(Optional.of(mock(UserEntity.class)));
-        when(postEntityRepository.save(any())).thenReturn(Optional.of(mock(PostEntity.class)));
-        Assertions.assertDoesNotThrow(() -> postService.create(title, body, userName));
+
+    @Test
+    void 포스트생성시_유저가_존재하지_않으면_에러를_내뱉는다() {
+        PostEntityFixture.TestInfo fixture = PostEntityFixture.get();
+        when(userEntityRepository.findByUserName(fixture.getUserName())).thenReturn(Optional.empty());
+        when(postEntityRepository.save(any())).thenReturn(mock(PostEntity.class));
+        SnsApplicationException exception = Assertions.assertThrows(SnsApplicationException.class, () -> postService.create(fixture.getUserName(), fixture.getTitle(), fixture.getBody()));
+
+        Assertions.assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
+    }
+
+
+    @Test
+    void 포스트_수정시_포스트가_존재하지_않으면_에러를_내뱉는다() {
+        PostEntityFixture.TestInfo fixture = PostEntityFixture.get();
+        when(postEntityRepository.findById(fixture.getPostId())).thenReturn(Optional.empty());
+        SnsApplicationException exception = Assertions.assertThrows(SnsApplicationException.class, () ->
+                postService.modify(fixture.getTitle(), fixture.getBody(), fixture.getUserId(), fixture.getPostId()));
+        Assertions.assertEquals(ErrorCode.POST_NOT_FOUND, exception.getErrorCode());
     }
 
     @Test
-    void 포스트작성시_요청한유저가_존재하지않는경우(){
-        String title = "title";
-        String body = "body";
-        String userName = "userName";
+    void 포스트_수정시_유저가_존재하지_않으면_에러를_내뱉는다() {
 
-        // mocking
-        when(userEntityRepository.findByUserName(userName)).thenReturn(Optional.empty());
-        when(postEntityRepository.save(any())).thenReturn(Optional.of(mock(PostEntity.class)));
+        PostEntityFixture.TestInfo fixture = PostEntityFixture.get();
 
-        SnsApplicationException e = Assertions.assertThrows(SnsApplicationException.class, () -> postService.create(title, body, userName));
-        Assertions.assertEquals(ErrorCode.USER_NOT_FOUND, e.getErrorCode());
+        when(postEntityRepository.findById(fixture.getPostId())).thenReturn(Optional.of(mock(PostEntity.class)));
+        when(userEntityRepository.findByUserName(fixture.getUserName())).thenReturn(Optional.empty());
+        SnsApplicationException exception = Assertions.assertThrows(SnsApplicationException.class, () -> postService.modify(fixture.getTitle(), fixture.getBody(), fixture.getUserId(), fixture.getPostId()));
+        Assertions.assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
+    }
+
+
+    @Test
+    void 포스트_수정시_포스트_작성자와_유저가_일치하지_않으면_에러를_내뱉는다() {
+        PostEntity mockPostEntity = mock(PostEntity.class);
+        UserEntity mockUserEntity = mock(UserEntity.class);
+        PostEntityFixture.TestInfo fixture = PostEntityFixture.get();
+        when(postEntityRepository.findById(fixture.getPostId())).thenReturn(Optional.of(mockPostEntity));
+        when(userEntityRepository.findByUserName(fixture.getUserName())).thenReturn(Optional.of(mockUserEntity));
+        when(mockPostEntity.getUser()).thenReturn(mock(UserEntity.class));
+        SnsApplicationException exception = Assertions.assertThrows(SnsApplicationException.class, () -> postService.modify(fixture.getTitle(), fixture.getBody(), fixture.getUserId(), fixture.getPostId()));
+        Assertions.assertEquals(ErrorCode.INVALID_PERMISSION, exception.getErrorCode());
     }
 
     @Test
-    void 포스트수정이_성공한경우(){
-        String title = "title";
-        String body = "body";
-        String userName = "userName";
-        Integer postId = 1;
-
-        // mocking
-        PostEntity postEntity = PostEntityFixture.get(userName, postId, 1);
-        UserEntity userEntity = postEntity.getUser();
-
-        when(userEntityRepository.findByUserName(userName)).thenReturn(Optional.of(userEntity));
-        when(postEntityRepository.findById(postId)).thenReturn(Optional.of(postEntity));
-        when(postEntityRepository.saveAndFlush(any())).thenReturn(postEntity);
-
-        Assertions.assertDoesNotThrow(() -> postService.modify(title, body, userName, postId));
+    void 포스트_삭제시_포스트가_존재하지_않으면_에러를_내뱉는다() {
+        PostEntityFixture.TestInfo fixture = PostEntityFixture.get();
+        when(postEntityRepository.findById(fixture.getPostId())).thenReturn(Optional.empty());
+        SnsApplicationException exception = Assertions.assertThrows(SnsApplicationException.class, () -> postService.delete(fixture.getUserId(), fixture.getPostId()));
+        Assertions.assertEquals(ErrorCode.POST_NOT_FOUND, exception.getErrorCode());
     }
 
     @Test
-    void 포스트수정시_포스트가_존재하지않는_경우(){
-        String title = "title";
-        String body = "body";
-        String userName = "userName";
-        Integer postId = 1;
-
-        // mocking
-        PostEntity postEntity = PostEntityFixture.get(userName, postId, 1);
-        UserEntity userEntity = postEntity.getUser();
-
-        when(userEntityRepository.findByUserName(userName)).thenReturn(Optional.of(userEntity));
-        when(postEntityRepository.findById(postId)).thenReturn(Optional.empty());
-
-        SnsApplicationException e = Assertions.assertThrows(SnsApplicationException.class, () -> postService.modify(title, body, userName, postId));
-        Assertions.assertEquals(ErrorCode.POST_NOT_FOUND, e.getErrorCode());
+    void 포스트_삭제시_유저가_존재하지_않으면_에러를_내뱉는다() {
+        PostEntityFixture.TestInfo fixture = PostEntityFixture.get();
+        when(postEntityRepository.findById(fixture.getPostId())).thenReturn(Optional.of(mock(PostEntity.class)));
+        when(userEntityRepository.findByUserName(fixture.getUserName())).thenReturn(Optional.empty());
+        SnsApplicationException exception = Assertions.assertThrows(SnsApplicationException.class, () -> postService.delete(fixture.getUserId(), fixture.getPostId()));
+        Assertions.assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
     }
 
+
     @Test
-    void 포스트수정시_권한이_없는_경우(){
-        String title = "title";
-        String body = "body";
-        String userName = "userName";
-        Integer postId = 1;
+    void 포스트_삭제시_포스트_작성자와_유저가_일치하지_않으면_에러를_내뱉는다() {
+        PostEntity mockPostEntity = mock(PostEntity.class);
+        UserEntity mockUserEntity = mock(UserEntity.class);
 
-        // mocking
-        PostEntity postEntity = PostEntityFixture.get(userName, postId, 1);
-        UserEntity writer = UserEntityFixture.get("userName1", "password", 2);
-
-        when(userEntityRepository.findByUserName(userName)).thenReturn(Optional.of(writer));
-        when(postEntityRepository.findById(postId)).thenReturn(Optional.of(postEntity));
-
-        SnsApplicationException e = Assertions.assertThrows(SnsApplicationException.class, () -> postService.modify(title, body, userName, postId));
-        Assertions.assertEquals(ErrorCode.INVALID_PERMISSION, e.getErrorCode());
+        PostEntityFixture.TestInfo fixture = PostEntityFixture.get();
+        when(postEntityRepository.findById(fixture.getPostId())).thenReturn(Optional.of(mockPostEntity));
+        when(userEntityRepository.findByUserName(fixture.getUserName())).thenReturn(Optional.of(mockUserEntity));
+        when(mockPostEntity.getUser()).thenReturn(mock(UserEntity.class));
+        SnsApplicationException exception = Assertions.assertThrows(SnsApplicationException.class, () -> postService.delete(fixture.getUserId(), fixture.getPostId()));
+        Assertions.assertEquals(ErrorCode.INVALID_PERMISSION, exception.getErrorCode());
     }
 
+
     @Test
-    void 포스트삭제가_성공한경우(){
-        String userName = "userName";
-        Integer postId = 1;
+    void 내_포스트리스트를_가져올_유저가_존재하지_않으면_에러를_내뱉는다() {
+        PostEntityFixture.TestInfo fixture = PostEntityFixture.get();
+        when(userEntityRepository.findByUserName(fixture.getUserName())).thenReturn(Optional.empty());
+        SnsApplicationException exception = Assertions.assertThrows(SnsApplicationException.class, () -> postService.my(fixture.getUserName(), mock(Pageable.class)));
 
-        // mocking
-        PostEntity postEntity = PostEntityFixture.get(userName, postId, 1);
-        UserEntity userEntity = postEntity.getUser();
-
-        when(userEntityRepository.findByUserName(userName)).thenReturn(Optional.of(userEntity));
-        when(postEntityRepository.findById(postId)).thenReturn(Optional.of(postEntity));
-
-        Assertions.assertDoesNotThrow(() -> postService.delete(userName, 1));
+        Assertions.assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
     }
 
-    @Test
-    void 포스트삭제시_포스트가_존재하지않는_경우(){
-        String userName = "userName";
-        Integer postId = 1;
-
-        // mocking
-        PostEntity postEntity = PostEntityFixture.get(userName, postId, 1);
-        UserEntity userEntity = postEntity.getUser();
-
-        when(userEntityRepository.findByUserName(userName)).thenReturn(Optional.of(userEntity));
-        when(postEntityRepository.findById(postId)).thenReturn(Optional.empty());
-
-        SnsApplicationException e = Assertions.assertThrows(SnsApplicationException.class, () -> postService.delete(userName, 1));
-        Assertions.assertEquals(ErrorCode.POST_NOT_FOUND, e.getErrorCode());
-    }
 
     @Test
-    void 포스트삭제시_권한이_없는_경우(){
-        String userName = "userName";
-        Integer postId = 1;
-
-        // mocking
-        PostEntity postEntity = PostEntityFixture.get(userName, postId, 1);
-        UserEntity writer = UserEntityFixture.get("userName1", "password", 2);
-
-        when(userEntityRepository.findByUserName(userName)).thenReturn(Optional.of(writer));
-        when(postEntityRepository.findById(postId)).thenReturn(Optional.of(postEntity));
-
-        SnsApplicationException e = Assertions.assertThrows(SnsApplicationException.class, () -> postService.delete(userName, 1));
-        Assertions.assertEquals(ErrorCode.INVALID_PERMISSION, e.getErrorCode());
-    }
-
-    @Test
-    void 피드목록요청이_성공한경우(){
+    void 포스트목록요청이_성공한경우() {
         Pageable pageable = mock(Pageable.class);
-
         when(postEntityRepository.findAll(pageable)).thenReturn(Page.empty());
-
         Assertions.assertDoesNotThrow(() -> postService.list(pageable));
     }
 
     @Test
-    void 내피드목록요청이_성공한경우(){
+    void 내포스트목록요청이_성공한경우() {
+        PostEntityFixture.TestInfo fixture = PostEntityFixture.get();
         Pageable pageable = mock(Pageable.class);
-        UserEntity user = mock(UserEntity.class);
-
-        when(userEntityRepository.findByUserName(any())).thenReturn(Optional.of(user));
-        when(postEntityRepository.findAllByUser(user, pageable)).thenReturn(Page.empty());
-
-        Assertions.assertDoesNotThrow(() -> postService.my("", pageable));
+        when(postEntityRepository.findAllByUser(any(), pageable)).thenReturn(Page.empty());
+        Assertions.assertDoesNotThrow(() -> postService.my(fixture.getUserName(), pageable));
     }
 
 }

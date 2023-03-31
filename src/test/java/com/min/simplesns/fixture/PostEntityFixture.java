@@ -1,19 +1,26 @@
 package com.min.simplesns.fixture;
 
-import com.min.simplesns.model.entity.PostEntity;
-import com.min.simplesns.model.entity.UserEntity;
-import org.springframework.security.core.parameters.P;
+import lombok.Data;
 
 public class PostEntityFixture {
-    public static PostEntity get(String userName, Integer postId, Integer userId){
-        UserEntity user = new UserEntity();
-        user.setId(userId);
-        user.setUserName(userName);
+    public static TestInfo get() {
+        TestInfo info = new TestInfo();
+        info.setPostId(1);
+        info.setUserId(1);
+        info.setUserName("name10");
+        info.setPassword("password");
+        info.setTitle("title");
+        info.setBody("body");
+        return info;
+    }
 
-        PostEntity result = new PostEntity();
-        result.setUser(user);
-        result.setId(postId);
-
-        return result;
+    @Data
+    public static class TestInfo {
+        private Integer postId;
+        private Integer userId;
+        private String userName;
+        private String password;
+        private String title;
+        private String body;
     }
 }
