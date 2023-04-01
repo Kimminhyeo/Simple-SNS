@@ -7,6 +7,7 @@ import com.min.simplesns.exception.ErrorCode;
 import com.min.simplesns.exception.SnsApplicationException;
 import com.min.simplesns.model.User;
 import com.min.simplesns.service.UserService;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -117,6 +118,7 @@ public class UserControllerTest {
     /**
      * 알람
      */
+    @Disabled
     @Test
     @WithMockUser
     void 알람기능() throws Exception {

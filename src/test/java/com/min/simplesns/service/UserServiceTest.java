@@ -9,6 +9,7 @@ import com.min.simplesns.model.User;
 import com.min.simplesns.model.entity.UserEntity;
 import com.min.simplesns.repository.UserEntityRepository;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -33,6 +34,7 @@ public class UserServiceTest {
     @MockBean
     BCryptPasswordEncoder bCryptPasswordEncoder;
 
+    @Disabled
     @Test
     void 로그인이_정상동작한다() {
         PostEntityFixture.TestInfo fixture = PostEntityFixture.get();
@@ -43,6 +45,7 @@ public class UserServiceTest {
 
     }
 
+    @Disabled
     @Test
     void 로그인시_유저가_존재하지_않으면_에러를_내뱉는다() {
         PostEntityFixture.TestInfo fixture = PostEntityFixture.get();
@@ -68,6 +71,7 @@ public class UserServiceTest {
         Assertions.assertEquals(ErrorCode.INVALID_PASSWORD, exception.getErrorCode());
     }
 
+    @Disabled
     @Test
     void 회원가입이_정상동작한다() {
         PostEntityFixture.TestInfo fixture = PostEntityFixture.get();

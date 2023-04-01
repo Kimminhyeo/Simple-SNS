@@ -7,7 +7,7 @@ public class PostEntityFixture {
         TestInfo info = new TestInfo();
         info.setPostId(1);
         info.setUserId(1);
-        info.setUserName("name10");
+        info.setUserName("name");
         info.setPassword("password");
         info.setTitle("title");
         info.setBody("body");
