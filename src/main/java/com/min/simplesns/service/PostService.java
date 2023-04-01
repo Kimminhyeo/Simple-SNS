@@ -69,10 +69,8 @@ public class PostService {
         return postEntityRepository.findAll(pageable).map(Post::fromEntity);
     }
 
-    public Page<Post> my(String userName, Pageable pageable){
-        UserEntity userEntity = getUserEntityOrException(userName);
-
-        return postEntityRepository.findAllByUser(userEntity, pageable).map(Post::fromEntity);
+    public Page<Post> my(Integer userId, Pageable pageable){
+        return postEntityRepository.findAllByUserId(userId, pageable).map(Post::fromEntity);
     }
 
     @Transactional
@@ -87,6 +85,8 @@ public class PostService {
 
         // like save
         likeEntityRepository.save(LikeEntity.of(userEntity, postEntity));
+
+        // kafka
         alarmProducer.send(new AlarmEvent(postEntity.getUser().getId(), AlarmType.NEW_LIKE_ON_POST, new AlarmArgs(userEntity.getId(), postId)));
     }
 

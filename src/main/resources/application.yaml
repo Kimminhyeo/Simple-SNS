@@ -53,3 +53,4 @@ spring:
         enable.idempotence: false
     topic:
       alarm: wnrzezzy-alarm
+

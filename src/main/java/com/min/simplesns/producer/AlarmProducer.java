@@ -19,6 +19,6 @@ public class AlarmProducer {
 
     public void send(AlarmEvent event){
         kafkaTemplate.send(topic, event.getReceiveUserId(), event);
-        log.info("Send to Kafka finished");
+        log.info("Send to Kafka finished: receiveUserId= {}, event= {}", event.getReceiveUserId(), event);
     }
 }

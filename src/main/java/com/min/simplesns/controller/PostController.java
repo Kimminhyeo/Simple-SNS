@@ -52,7 +52,8 @@ public class PostController {
 
     @GetMapping("/my")
     public Response<Page<PostResponse>> my(Pageable pageable, Authentication authentication){
-        return Response.success(postService.my(authentication.getName(), pageable).map(PostResponse::fromPost));
+        User user = ClassUtils.getSafeCastInstance(authentication.getPrincipal(), User.class).get();
+        return Response.success(postService.my(user.getId(), pageable).map(PostResponse::fromPost));
     }
 
     @PostMapping("/{postId}/likes")
